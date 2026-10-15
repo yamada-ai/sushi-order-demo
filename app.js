@@ -1,0 +1,46 @@
+const categories = [
+  {id:'recommended',name:'おすすめ'},
+  {id:'nigiri',name:'にぎり'},
+  {id:'salmon',name:'まぐろ・サーモン'},
+  {id:'white',name:'白身・えび'},
+  {id:'side',name:'揚げ物・サイド'},
+];
+const products = [
+  {id:'salmon',name:'生サーモン',description:'とろける旨みの定番',price:180,image:0,tag:'人気',categories:['recommended','nigiri','salmon']},
+  {id:'bream',name:'活〆真鯛',description:'上品な甘みと歯ごたえ',price:200,image:1,tag:'おすすめ',categories:['recommended','nigiri','white']},
+  {id:'yellowtail',name:'炙りはまち レモンのせ',description:'香ばしく、さっぱり',price:200,image:2,tag:'期間限定',categories:['recommended','nigiri','white']},
+  {id:'shrimp',name:'えび',description:'ぷりっとした食感',price:180,image:3,categories:['recommended','nigiri','white']},
+  {id:'fried-shrimp',name:'天然えびフライにぎり',description:'揚げたてのサクサク感',price:200,image:4,tag:'人気',categories:['recommended','nigiri','side']},
+  {id:'mackerel',name:'国産 さんま',description:'香味野菜でさっぱりと',price:180,image:5,categories:['recommended','nigiri']},
+  {id:'squid',name:'いか',description:'やさしい甘みと歯ごたえ',price:180,image:6,categories:['recommended','nigiri','white']},
+  {id:'tuna',name:'まぐろ',description:'赤身の旨みをひと口に',price:180,image:7,tag:'定番',categories:['recommended','nigiri','salmon']},
+];
+const storageKey='sushi-time-demo-v1';
+const state={category:'recommended',cart:{},orders:[],view:'customer'};
+const yen=n=>'¥'+n.toLocaleString('ja-JP');
+const el=id=>document.getElementById(id);
+const safeRead=()=>{try{const data=JSON.parse(localStorage.getItem(storageKey)||'{}');if(data.cart&&typeof data.cart==='object')state.cart=data.cart;if(Array.isArray(data.orders))state.orders=data.orders}catch{}};
+const save=()=>{try{localStorage.setItem(storageKey,JSON.stringify({cart:state.cart,orders:state.orders}))}catch{}};
+const productById=id=>products.find(product=>product.id===id);
+const imagePosition=index=>`${(index%4)*100/3}% ${Math.floor(index/4)*100}%`;
+const cartEntries=()=>Object.entries(state.cart).filter(([id,quantity])=>productById(id)&&Number.isInteger(quantity)&&quantity>0);
+let toastTimer;
+function toast(message){const node=el('toast');node.textContent=message;node.classList.add('show');clearTimeout(toastTimer);toastTimer=setTimeout(()=>node.classList.remove('show'),2800)}
+function renderCategories(){el('category-nav').innerHTML=categories.map(category=>`<button type="button" class="category-button ${category.id===state.category?'active':''}" data-category="${category.id}" aria-pressed="${category.id===state.category}">${category.name}</button>`).join('')}
+function renderProducts(){const category=categories.find(item=>item.id===state.category);const shown=products.filter(product=>product.categories.includes(state.category));el('menu-heading').textContent=category.name;el('menu-count').textContent=`${shown.length}品`;el('products').innerHTML=shown.map(product=>`<article class="product-card"><div class="product-photo" style="background-position:${imagePosition(product.image)}"><span class="product-tag ${product.tag==='期間限定'?'gold':''}" ${product.tag?'':'hidden'}>${product.tag||''}</span></div><div class="product-info"><h3 class="product-name">${product.name}</h3><p class="product-desc">${product.description}</p><div class="product-bottom"><span class="price">${yen(product.price)}<small>税込</small></span><button class="add-button" type="button" data-add="${product.id}" aria-label="${product.name}を追加">+</button></div></div></article>`).join('')}
+function renderCart(){const entries=cartEntries();const count=entries.reduce((sum,[,quantity])=>sum+quantity,0);const total=entries.reduce((sum,[id,quantity])=>sum+productById(id).price*quantity,0);el('cart-count').textContent=count;el('cart-total').textContent=yen(total);el('order-button').disabled=count===0;el('cart-items').innerHTML=entries.length?entries.map(([id,quantity])=>{const product=productById(id);return `<div class="cart-item"><div class="cart-thumb" style="background-position:${imagePosition(product.image)}"></div><div class="cart-item-main"><p class="cart-item-name">${product.name}</p><span class="cart-item-price">${yen(product.price*quantity)}</span></div><div class="quantity-control"><button type="button" data-quantity="${id}" data-change="-1" aria-label="${product.name}を1つ減らす">−</button><span>${quantity}</span><button type="button" data-quantity="${id}" data-change="1" aria-label="${product.name}を1つ増やす">+</button></div></div>`}).join(''):'<div class="empty-cart"><span class="empty-cart-icon" aria-hidden="true">🍣</span><strong>まだ商品が入っていません</strong><p>メニューの「＋」からお選びください</p></div>'}
+function renderHistory(){const target=el('history-content');target.innerHTML=state.orders.length?[...state.orders].reverse().map(order=>`<div class="history-entry"><div class="history-entry-head"><strong>注文 #${String(order.number).padStart(3,'0')} <small> ${new Date(order.createdAt).toLocaleString('ja-JP',{month:'numeric',day:'numeric',hour:'2-digit',minute:'2-digit'})}</small></strong><span class="status ${order.status}">${statusLabel(order.status)}</span></div><div class="history-entry-body">${order.items.map(item=>`${productById(item.id)?.name||'商品'} × ${item.quantity}`).join(' / ')}<br><strong>合計 ${yen(order.total)}</strong></div></div>`).join(''):'<div class="history-empty">まだ注文履歴はありません。</div>'}
+function statusLabel(status){return {new:'受付済み',preparing:'調理中',served:'提供済み'}[status]||'受付済み'}
+function renderKitchen(){const counts={new:0,preparing:0,served:0};state.orders.forEach(order=>{if(order.status in counts)counts[order.status]++});el('kitchen-stats').innerHTML=[['新しい注文',counts.new],['調理中',counts.preparing],['提供済み',counts.served]].map(([label,count])=>`<div class="stat-card"><span>${label}</span><strong>${count}</strong></div>`).join('');el('kitchen-orders').innerHTML=state.orders.length?[...state.orders].reverse().map(order=>`<article class="order-card"><div class="order-card-header"><div><strong>注文 #${String(order.number).padStart(3,'0')}</strong><small>テーブル 12 ・ ${new Date(order.createdAt).toLocaleTimeString('ja-JP',{hour:'2-digit',minute:'2-digit'})}</small></div><span class="status ${order.status}">${statusLabel(order.status)}</span></div><div class="order-lines">${order.items.map(item=>`<div><span>${productById(item.id)?.name||'商品'}</span><strong>× ${item.quantity}</strong></div>`).join('')}</div><div class="order-card-bottom"><strong>${yen(order.total)}</strong><button class="status-button" type="button" data-order="${order.id}" ${order.status==='served'?'disabled':''}>${order.status==='new'?'調理を始める':order.status==='preparing'?'提供済みにする':'提供済み ✓'}</button></div></article>`).join(''):'<div class="empty-orders">注文はまだありません。お客様画面から注文すると、ここに表示されます。</div>'}
+function render(){renderCategories();renderProducts();renderCart();renderHistory();renderKitchen();el('customer-view').hidden=state.view!=='customer';el('kitchen-view').hidden=state.view!=='kitchen';el('view-switch').innerHTML=state.view==='customer'?'厨房画面を見る <span aria-hidden="true">↗</span>':'お客様画面に戻る <span aria-hidden="true">↗</span>'}
+function placeOrder(){const entries=cartEntries();if(!entries.length)return;const total=entries.reduce((sum,[id,quantity])=>sum+productById(id).price*quantity,0);const number=Math.max(0,...state.orders.map(order=>order.number||0))+1;state.orders.push({id:crypto.randomUUID?crypto.randomUUID():`${Date.now()}-${number}`,number,createdAt:new Date().toISOString(),status:'new',items:entries.map(([id,quantity])=>({id,quantity})),total});state.cart={};save();render();toast(`注文 #${String(number).padStart(3,'0')} を受け付けました`)}
+document.addEventListener('click',event=>{const category=event.target.closest('[data-category]');if(category){state.category=category.dataset.category;renderCategories();renderProducts();return}const add=event.target.closest('[data-add]');if(add){const id=add.dataset.add;state.cart[id]=(state.cart[id]||0)+1;save();renderCart();toast(`${productById(id).name}を追加しました`);return}const quantity=event.target.closest('[data-quantity]');if(quantity){const id=quantity.dataset.quantity;state.cart[id]=Math.max(0,(state.cart[id]||0)+Number(quantity.dataset.change));if(!state.cart[id])delete state.cart[id];save();renderCart();return}const next=event.target.closest('[data-order]');if(next){const order=state.orders.find(item=>item.id===next.dataset.order);if(order){order.status=order.status==='new'?'preparing':order.status==='preparing'?'served':order.status;save();renderKitchen();renderHistory();toast(`注文 #${String(order.number).padStart(3,'0')}：${statusLabel(order.status)}`)}return}});
+el('order-button').addEventListener('click',placeOrder);
+el('view-switch').addEventListener('click',()=>{state.view=state.view==='customer'?'kitchen':'customer';render();window.scrollTo({top:0,behavior:'smooth'})});
+el('history-button').addEventListener('click',()=>{renderHistory();el('history-modal').hidden=false;el('close-history').focus()});
+function closeHistory(){el('history-modal').hidden=true;el('history-button').focus()}
+el('close-history').addEventListener('click',closeHistory);
+el('history-modal').addEventListener('click',event=>{if(event.target===el('history-modal'))closeHistory()});
+document.addEventListener('keydown',event=>{if(event.key==='Escape'&&!el('history-modal').hidden)closeHistory()});
+window.addEventListener('storage',event=>{if(event.key===storageKey){safeRead();render()}});
+safeRead();render();

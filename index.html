@@ -1,0 +1,46 @@
+<!doctype html>
+<html lang="ja">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#a82b20">
+  <meta name="description" content="お寿司の注文から提供までを体験できるデモアプリ">
+  <title>すしの時間 | 注文デモ</title>
+  <link rel="stylesheet" href="./styles.css">
+  <script src="./app.js" defer></script>
+</head>
+<body>
+  <div class="app-shell">
+    <header class="topbar">
+      <div class="brand"><span class="brand-mark" aria-hidden="true">●</span><div><strong>すしの時間</strong><small>ORDER EXPERIENCE</small></div></div>
+      <div class="topbar-right"><span class="demo-badge">DEMO</span><span class="table-chip"><span class="table-dot"></span> テーブル 12</span><button class="view-switch" id="view-switch" type="button">厨房画面を見る <span aria-hidden="true">↗</span></button></div>
+    </header>
+
+    <main id="customer-view">
+      <section class="intro-row"><div><p class="eyebrow">WELCOME TO SUSHI TIME</p><h1>お好きな一皿を、どうぞ。</h1><p class="subtitle">食べたいものを選んで、注文ボタンを押してください。</p></div><div class="intro-decoration" aria-hidden="true">いただきます<span>。</span></div></section>
+      <nav class="category-nav" aria-label="メニューカテゴリー" id="category-nav"></nav>
+      <div class="content-grid">
+        <section class="menu-panel" aria-labelledby="menu-heading">
+          <div class="section-heading"><div><p class="eyebrow" id="category-overline">OUR MENU</p><h2 id="menu-heading">おすすめ</h2></div><div class="menu-count" id="menu-count"></div></div>
+          <div class="products" id="products"></div>
+        </section>
+        <aside class="cart-panel" aria-label="注文内容">
+          <div class="cart-header"><div><p class="eyebrow">YOUR ORDER</p><h2>ご注文内容</h2></div><span class="cart-count" id="cart-count">0</span></div>
+          <div class="cart-items" id="cart-items"></div>
+          <div class="cart-bottom"><button class="history-link" id="history-button" type="button">注文履歴を見る <span aria-hidden="true">→</span></button><div class="total-row"><span>合計 <small>（税込）</small></span><strong id="cart-total">¥0</strong></div><button class="order-button" id="order-button" type="button" disabled>注文を確定する <span aria-hidden="true">→</span></button><p class="demo-note">この画面は体験用です。実際の注文や決済は行われません。</p></div>
+        </aside>
+      </div>
+    </main>
+
+    <main class="kitchen-view" id="kitchen-view" hidden>
+      <div class="kitchen-intro"><div><p class="eyebrow">KITCHEN BOARD</p><h1>厨房の注文管理</h1><p class="subtitle">新しい注文から順に、調理・提供の状況を更新できます。</p></div><div class="kitchen-symbol" aria-hidden="true">🍣</div></div>
+      <div class="kitchen-stats" id="kitchen-stats"></div>
+      <div class="kitchen-toolbar"><h2>注文一覧</h2><span>テーブル 12</span></div>
+      <div class="kitchen-orders" id="kitchen-orders"></div>
+    </main>
+  </div>
+
+  <div class="modal-backdrop" id="history-modal" hidden><section class="modal" role="dialog" aria-modal="true" aria-labelledby="history-title"><div class="modal-header"><div><p class="eyebrow">ORDER HISTORY</p><h2 id="history-title">注文履歴</h2></div><button class="close-button" id="close-history" type="button" aria-label="閉じる">×</button></div><div id="history-content"></div></section></div>
+  <div class="toast" id="toast" role="status" aria-live="polite"></div>
+</body>
+</html>
